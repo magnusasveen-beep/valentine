@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>YAY!</title>
+
+  <style>
+    :root{
+      --bg1:#070a13;
+      --bg2:#1b0f2e;
+      --card:#ffffff14;
+      --stroke:#ffffff22;
+      --text:#f7f7fb;
+      --pink:#ff4d8d;
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    body{
+      margin:0;
+      min-height:100svh;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 20% 10%, rgba(255,77,141,.25), transparent 60%),
+        radial-gradient(circle at top, var(--bg2), var(--bg1));
+      overflow:hidden;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    }
+
+    /* Bakgrunnsglow */
+    .blob{
+      position:fixed;
+      width:min(520px, 70vw);
+      aspect-ratio:1;
+      border-radius:999px;
+      filter: blur(32px);
+      opacity:.45;
+      pointer-events:none;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    .blob{
+      background: radial-gradient(circle, rgba(255,77,141,.9), transparent 60%);
+      left:-15vw; top:-10vh;
+    }
+
+    @keyframes drift{
+      from{ transform: translate3d(0,0,0); }
+      to{ transform: translate3d(30px,-20px,0); }
+    }
+
+    canvas{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .card{
+      width:min(560px, 100%);
+      border-radius:26px;
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border:1px solid var(--stroke);
+      box-shadow: 0 22px 80px rgba(0,0,0,.45);
+      backdrop-filter: blur(12px);
+      padding:26px 18px;
+      text-align:center;
+      position:relative;
+    }
+
+    h1{
+      margin:0 0 6px;
+      font-size: clamp(30px, 7vw, 44px);
+    }
+
+    .big{
+      font-size: clamp(56px, 13vw, 96px);
+      margin: 6px 0 12px;
+      animation: pop .9s ease both;
+    }
+
+    @keyframes pop{
+      0%{ transform: scale(.85); opacity:0; }
+      60%{ transform: scale(1.1); opacity:1; }
+      100%{ transform: scale(1); }
+    }
+
+    .hearts{
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .hearts span{
+      font-size:22px;
+      animation: pulse 1.3s ease-in-out infinite;
+    }
+    .hearts span:nth-child(2){ animation-delay:.15s; }
+    .hearts span:nth-child(3){ animation-delay:.3s; }
+
+    @keyframes pulse{
+      0%,100%{ transform: scale(1); }
+      50%{ transform: scale(1.15); }
+    }
+
+    p{
+      margin:0 0 18px;
+      font-size: clamp(15px, 4.3vw, 17px);
+      opacity:.92;
+      line-height:1.45;
+    }
+
+    /* 🔥 MER KONFETTI-KNAPP */
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:14px 18px;
+      font-weight:900;
+      font-size:16px;
+      cursor:pointer;
+      background: linear-gradient(135deg, var(--pink), #ffd1e1);
+      color:#070a13;
+      box-shadow: 0 14px 34px rgba(255,77,141,.25);
+    }
+    .btn:active{
+      transform: scale(.97);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob"></div>
+  <canvas id="confetti"></canvas>
+
+  <main class="card">
+    <h1>YEEES 💖</h1>
+    <div class="big">🎉💘🎉</div>
+
+    <div class="hearts">
+      <span>💗</span>
+      <span>💖</span>
+      <span>💞</span>
+    </div>
+
+    <button class="btn" id="more">MER KONFETTI 🎉</button>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+
+    function resize(){
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+    }
+    addEventListener("resize", resize);
+    resize();
+
+    const rand = (a,b)=> a + Math.random()*(b-a);
+    let pieces = [];
+
+    function heart(ctx){
+      ctx.beginPath();
+      ctx.moveTo(0, 0.9);
+      ctx.bezierCurveTo(-1.2, 0.2, -0.8, -1.1, 0, -0.4);
+      ctx.bezierCurveTo(0.8, -1.1, 1.2, 0.2, 0, 0.9);
+      ctx.closePath();
+    }
+
+    function burst(){
+      pieces = [];
+
+      const n = 420; // 🔥 mye konfetti
+      const ox = innerWidth * 0.5;
+      const oy = innerHeight * 0.35;
+
+      for(let i=0;i<n;i++){
+        const a = rand(-Math.PI, 0);
+        const s = rand(3.5, 10);
+        pieces.push({
+          x: ox + rand(-20,20),
+          y: oy + rand(-10,10),
+          vx: Math.cos(a)*s + rand(-1.5,1.5),
+          vy: Math.sin(a)*s,
+          r: rand(2.2, 5.5),
+          rot: rand(0, Math.PI),
+          vr: rand(-0.25, 0.25),
+          life: rand(120, 220),
+          heart: Math.random() < 0.3,
+          hue: (330 + Math.random()*70) % 360
+        });
+      }
+      tick();
+    }
+
+    function tick(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      for(const p of pieces){
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.vx *= 0.994;
+        p.vy *= 0.994;
+        p.rot += p.vr;
+        p.life--;
+
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = `hsla(${p.hue}, 88%, 65%, 0.95)`;
+
+        if(p.heart){
+          ctx.scale(p.r, p.r);
+          heart(ctx);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-p.r, -p.r, p.r*2.4, p.r*2.4);
+        }
+        ctx.restore();
+      }
+
+      pieces = pieces.filter(p => p.life > 0 && p.y < canvas.height + 80);
+      if(pieces.length) requestAnimationFrame(tick);
+    }
+
+    // Start med dobbel burst
+    burst();
+    setTimeout(burst, 250);
+
+    // 🔘 Knapp: mer konfetti
+    document.getElementById("more").addEventListener("click", burst);
+  </script>
+</body>
+</html>

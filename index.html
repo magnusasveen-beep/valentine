@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Valentine?</title>
+  <style>
+    :root{
+      --bg1:#ffe8f1;
+      --bg2:#ffd6e6;
+      --card:#ffffffd9;
+      --text:#141414;
+      --yes:#22c55e;
+      --no:#ef4444;
+      --stroke:#ffffffaa;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body{
+      margin:0;
+      min-height:100svh;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--bg1), var(--bg2));
+      color:var(--text);
+      overflow:hidden;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    }
+
+    /* Bakgrunnshjerter */
+    .bg{ position:fixed; inset:0; pointer-events:none; opacity:.35; }
+    .bg span{
+      position:absolute;
+      font-size: clamp(16px, 4vw, 26px);
+      transform: translateY(110svh);
+      animation: floatUp linear infinite;
+      filter: blur(.15px);
+    }
+    @keyframes floatUp{
+      to{ transform: translateY(-20svh) rotate(25deg); }
+    }
+
+    .card{
+      width:min(520px, 100%);
+      border-radius:22px;
+      background:var(--card);
+      border:1px solid var(--stroke);
+      box-shadow: 0 18px 60px rgba(0,0,0,.12);
+      backdrop-filter: blur(10px);
+      padding:22px 18px 18px;
+      text-align:center;
+      position:relative;
+    }
+    h1{
+      margin:0 0 8px;
+      font-size: clamp(26px, 6.5vw, 40px);
+      line-height:1.05;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:0 0 14px;
+      opacity:.82;
+      font-size: clamp(14px, 4vw, 16px);
+    }
+
+    /* “Spillområde” for knappene */
+    .arena{
+      position:relative;
+      width:100%;
+      height: 44svh;
+      min-height: 300px;
+      max-height: 420px;
+      border-radius:18px;
+      background: linear-gradient(180deg, #ffffffc0, #ffffff70);
+      border:1px dashed #ff7fb0;
+      overflow:hidden;
+      padding:14px;
+      touch-action: manipulation;
+    }
+
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:16px 18px;
+      font-weight:800;
+      font-size: 18px;
+      box-shadow: 0 12px 26px rgba(0,0,0,.12);
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+
+    .btn.yes{
+      width:100%;
+      background: var(--yes);
+      color:white;
+    }
+
+    /* NEI-knappen er absolutt i arenaen */
+    .btn.no{
+      position:absolute;
+      left: 50%;
+      top: 65%;
+      transform: translate(-50%, -50%);
+      background: var(--no);
+      color:white;
+      min-width: 150px;
+      padding:16px 18px;
+    }
+
+    .hint{
+      margin-top:12px;
+      font-size: 13px;
+      opacity:.75;
+    }
+
+    .tiny{
+      margin-top:6px;
+      font-size: 12px;
+      opacity:.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" id="bg"></div>
+
+  <main class="card">
+    <h1>Vil du bli min Valentine? 💘</h1>
+    
+
+    <section class="arena" id="arena" aria-label="Valentine-knapper">
+      <button class="btn yes" id="yesBtn">JA ❤️</button>
+      <button class="btn no" id="noBtn">NEI 😭</button>
+    </section>
+
+    
+  </main>
+
+  <script>
+    // Bakgrunnshjerter
+    const bg = document.getElementById("bg");
+    const emojis = ["💗","💖","💞","💕","💘","💓","💝"];
+    const count = 16;
+    for(let i=0;i<count;i++){
+      const s = document.createElement("span");
+      s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      s.style.left = (Math.random()*100) + "vw";
+      s.style.animationDuration = (8 + Math.random()*10) + "s";
+      s.style.animationDelay = (-Math.random()*10) + "s";
+      bg.appendChild(s);
+    }
+
+    const arena = document.getElementById("arena");
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function placeNoRandom(){
+      const a = arena.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+      const pad = 10;
+
+      const maxX = a.width - b.width - pad;
+      const maxY = a.height - b.height - pad;
+
+      const x = pad + Math.random()*maxX;
+      const y = pad + Math.random()*maxY;
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      noBtn.style.transform = "translate(0,0)";
+    }
+
+    // Flytt NEI når finger/pekeren kommer nær
+    function maybeRunAway(clientX, clientY){
+      const a = arena.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+
+      // Avstand fra pekepunkt til senter av NEI
+      const cx = (b.left + b.right)/2;
+      const cy = (b.top + b.bottom)/2;
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+      const dist = Math.hypot(dx, dy);
+
+      // terskel: litt større på mobil
+      const threshold = 120;
+
+      if(dist < threshold){
+        // flytt til motsatt retning + litt random
+        const moveX = (-dx / (dist || 1)) * 140 + (Math.random()*60 - 30);
+        const moveY = (-dy / (dist || 1)) * 140 + (Math.random()*60 - 30);
+
+        const newLeft = clamp((b.left - a.left) + moveX, 8, a.width - b.width - 8);
+        const newTop  = clamp((b.top  - a.top ) + moveY, 8, a.height - b.height - 8);
+
+        noBtn.style.left = newLeft + "px";
+        noBtn.style.top  = newTop + "px";
+        noBtn.style.transform = "translate(0,0)";
+      }
+    }
+
+    // Pointer events dekker både mus og touch på moderne mobil
+    arena.addEventListener("pointermove", (e)=>{
+      maybeRunAway(e.clientX, e.clientY);
+    }, {passive:true});
+
+    // Hvis noen prøver å trykke NEI: flytt den umiddelbart
+    noBtn.addEventListener("pointerdown", (e)=>{
+      e.preventDefault();
+      placeNoRandom();
+    }, {passive:false});
+
+    // JA -> side 2
+    yesBtn.addEventListener("click", ()=>{
+      window.location.href = "yes.html";
+    });
+
+    // Startposisjon (så den ikke ligger over JA)
+    placeNoRandom();
+  </script>
+</body>
+</html>
